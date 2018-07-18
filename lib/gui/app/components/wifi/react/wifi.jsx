@@ -453,8 +453,9 @@ class Wifi extends React.PureComponent {
    */
   handleError (err) {
     console.error(err)
+    const message = (!_.isEmpty(err.data) && _.head(err.data)) || err.message
     this.setState({
-      wifiSettingsError: err
+      wifiSettingsError: { message }
     })
   }
 
