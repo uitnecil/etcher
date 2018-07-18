@@ -27,19 +27,18 @@ const {
   DeleteButton,
   Divider,
   Heading,
-  Input,
   Provider,
   Txt
 } = require('rendition')
 const styled = require('styled-components').default
-const fontAwesome = require('@fortawesome/fontawesome')
-const {
-  faWifi,
-  faLock,
-  faWrench,
-  faAngleLeft,
-  faTimes
-} = require('@fortawesome/fontawesome-free-solid')
+// const fontAwesome = require('@fortawesome/fontawesome')
+// const {
+//   faWifi,
+//   faLock,
+//   faWrench,
+//   faAngleLeft,
+//   faTimes
+// } = require('@fortawesome/fontawesome-free-solid')
 const analytics = require('../../../modules/analytics')
 const actions = require('./actions.js')
 const KBInput = require('./keyboard/index.jsx')
@@ -47,11 +46,11 @@ const KBInput = require('./keyboard/index.jsx')
 /**
  * @summary Font awesome icon constants
  */
-const faWifiHTML = fontAwesome.icon(faWifi).html.join('\n')
-const faLockHTML = fontAwesome.icon(faLock).html.join('\n')
-const faWrenchHTML = fontAwesome.icon(faWrench).html.join('\n')
-const faAngleLeftHTML = fontAwesome.icon(faAngleLeft).html.join('\n')
-const faTimesHTML = fontAwesome.icon(faTimes).html.join('\n')
+// const faWifiHTML = fontAwesome.icon(faWifi).html.join('\n')
+// const faLockHTML = fontAwesome.icon(faLock).html.join('\n')
+// const faWrenchHTML = fontAwesome.icon(faWrench).html.join('\n')
+// const faAngleLeftHTML = fontAwesome.icon(faAngleLeft).html.join('\n')
+// const faTimesHTML = fontAwesome.icon(faTimes).html.join('\n')
 
 const rootStyles = {
   display: 'flex',
@@ -152,7 +151,8 @@ const ConnectionUnstyled = styled((props) => {
       onClick={ () => { return props.configureConnection(props.connection) }}
       plaintext
       primary>
-      <span dangerouslySetInnerHTML={ { __html: faWrenchHTML } } />
+      <span className="fas fa-wrench"></span>
+      {/* <span dangerouslySetInnerHTML={ { __html: faWrenchHTML } } /> */}
       <Txt bold>Configuration</Txt>
     </Button>
   )
@@ -174,10 +174,12 @@ const ConnectionUnstyled = styled((props) => {
 
   return (
     <div className={ props.className }>
-      <span dangerouslySetInnerHTML={ { __html: faWifiHTML } } />
+      { props.selected ? <span className="fas fa-wifi"/> : <span style={ { width: '2.15em' } }/> }
+      {/* <span dangerouslySetInnerHTML={ { __html: faWifiHTML } }/> */}
       <span
         style={ { opacity: isOpen ? '0' : '1' } }
-        dangerouslySetInnerHTML={ { __html: faLockHTML } } />
+        className="fas fa-lock" />
+        {/* dangerouslySetInnerHTML={ { __html: faLockHTML } } /> */}
       { labelElem }
       { props.selected ? configureButton : null }
     </div>
@@ -258,6 +260,16 @@ const Main = styled.div `
   flex: 1;
 `
 
+const ErrorAlert = styled((props) => {
+  return (
+    <div className="wifi-error-alert-container">
+      <Alert {...props} className="wifi-error-alert">
+        {props.wifiSettingsError.message}
+      </Alert>
+    </div>
+  )
+}) ``
+
 const Footer = styled((props) => {
   return (
     <Container className={ props.className } align="center">
@@ -298,13 +310,19 @@ class Wifi extends React.PureComponent {
       isWifiEnabled: false,
       showPassphrase: false,
       currentNetwork: {},
-      networkList: []
+      networkList: [],
+      wifiSettingsError: null
     }
 
+    this.scanNetworks = true
     this.selectedEdit = {}
     this.browse = this.browse.bind(this)
     this.toggleWifi = this.toggleWifi.bind(this)
     this.togglePassphraseVisibility = this.togglePassphraseVisibility.bind(this)
+  }
+
+  componentWillUnmount() {
+    this.scanNetworks = false
   }
 
   render () {
@@ -324,13 +342,13 @@ class Wifi extends React.PureComponent {
               <DeleteButton onClick={ this.props.close } />
             </Corner>
           </Header>
-          {!this.state.loading && this.state.isWifiEnabled && <Main>
+          {!this.state.loading && this.state.isWifiEnabled && <Main className="wifi-modal-main">
             {!_.isEmpty(this.state.currentNetwork) && <div><Connection
               connection={ this.state.currentNetwork }
               selected
               configureConnection={ this.configureNetwork(this.state.currentNetwork).bind(this) } />
             <Divider color={ colors.divider } /></div> }
-            <div>
+            <div className="wifi-networks-list">
               { _.chain(this.state.networkList)
                 .reject({ ssid: this.state.currentNetwork.ssid })
                 .map((connection) => {
@@ -342,6 +360,7 @@ class Wifi extends React.PureComponent {
                 }).value() }
             </div>
           </Main>}
+          {this.state.wifiSettingsError && <ErrorAlert danger wifiSettingsError={this.state.wifiSettingsError}/>}
           <Footer close={ this.props.close } text="Close"/>
         </Provider>
       )
@@ -355,7 +374,8 @@ class Wifi extends React.PureComponent {
               onClick={ _.partial(this.browse, 'list') }
               bg={ colors.activeGray }
               color={ colors.textBlack }>
-              <span dangerouslySetInnerHTML={ { __html: faAngleLeftHTML } } />&nbsp;
+              <span className="fas fa-angle-left" />&nbsp;
+              {/* <span dangerouslySetInnerHTML={ { __html: faAngleLeftHTML } } />&nbsp; */}
               Back
             </Button>
             <Corner>
@@ -387,10 +407,12 @@ class Wifi extends React.PureComponent {
             </Button>
             <Divider color={ colors.divider } />
             <Button danger plaintext onClick={this.forget(this.selectedEdit).bind(this)}>
-              <span dangerouslySetInnerHTML={ { __html: faTimesHTML } } />&nbsp;
+              <span className="fas fa-times" />&nbsp;
+              {/* <span dangerouslySetInnerHTML={ { __html: faTimesHTML } } />&nbsp; */}
               Forget network
             </Button>
           </Main>
+          {this.state.wifiSettingsError && <ErrorAlert warning wifiSettingsError={this.state.wifiSettingsError}/>}
           <Footer close={this.closeConfiguration.bind(this)} />
         </Provider>
       )
@@ -400,11 +422,19 @@ class Wifi extends React.PureComponent {
   }
 
   componentDidMount () {
-    // Check if wifi is active
     actions.isActive()
       .then(this.handleWifiActive.bind(this))
       .catch((err) => {
-        console.log('err :(((', err)
+        this.setState({isWifiEnabled: false})
+        this.handleError(err)
+        setTimeout(() => {
+          return actions.isActive()
+          .then(this.handleWifiActive.bind(this))
+          .catch((err) => {
+            this.setState.bind(this, {isWifiEnabled: false})
+            this.handleError.bind(this, err)
+          })
+        }, 500)
       })
   }
 
@@ -419,35 +449,37 @@ class Wifi extends React.PureComponent {
         actions.getCurrentNetwork()
       ])
         .then(this.handleNetworksList.bind(this))
-        .catch(this.handleNetworksListError.bind(this))
+        .catch(this.handleError.bind(this))
+    } else { 
+      this.setState({isWifiEnabled: false})
     }
   }
 
   handleNetworksList ([ networkList, currentNetwork ]) {
-    console.log('currentNetwork', _.uniqBy(currentNetwork, (n) => n.ssid))
     this.setState({
       networkList,
-      currentNetwork: _.find(networkList, {ssid: currentNetwork.Id}) || {}
+      currentNetwork: _.find(networkList, {ssid: (currentNetwork.ssid || this.state.currentNetwork.ssid)}) || {}
     })
     setTimeout(() => {
-      return actions.getNetworks()
-      .then((networks) => {
-        return [networks, this.state.currentNetwork]
-      })
-      .then(this.handleNetworksList.bind(this))
-      .catch(this.handleNetworksListError.bind(this))
+      if (this.scanNetworks) {
+        return Bluebird.all([
+          actions.getNetworks(),
+          actions.getCurrentNetwork()
+        ])
+        .then(this.handleNetworksList.bind(this))
+        .catch((err) => {
+          this.handleNetworksList([this.state.networkList, this.state.currentNetwork])
+          return this.handleError.bind(this, err)
+        })
+      }
     }, 5000)
   }
 
-  handleNetworksListError (err) {
-    /*
-    Function to set error to the pertaining form control
-    error(formControl, errorMessage)
-    */
+  handleError (err) {
+    console.error(err)
     this.setState({
-      'x-error': err.message
+      wifiSettingsError: err
     })
-    console.log('err???', err)
   }
 
   toggleWifi () {
@@ -460,8 +492,8 @@ class Wifi extends React.PureComponent {
         this.handleWifiActive(active)
       })
       .catch((err) => {
-        // Handle errors
-        console.log('err', err)
+        this.setState({isWifiEnabled: false})
+        this.handleError(err)
       })
   }
 
@@ -473,25 +505,39 @@ class Wifi extends React.PureComponent {
             currentNetwork: network
           })
         } else {
-          console.log(`Could not connect to network ${network.ssid}`)
+          throw success
         }
       })
       .catch((err) => {
-        console.log('err?', err)
+        this.handleError(err)
       })
   }
 
-  closeConfiguration () {
+  closeConfiguration (evt) {
+    evt.preventDefault()
     return this.connect(this.selectedEdit)
-      .then(() => {
-        this.props.close()
+      .then((res) => {
+        if (res) {
+          this.props.close()
+        }
       })
       .catch((err) => {
-        console.log('err :(', err)
+        this.handleError(err)
       })
   }
 
   browse (page) {
+    if (page !== 'configure') {
+      this.scanNetworks = true
+      actions.getNetworks()
+      .then((networks) => {
+        return [networks, this.state.currentNetwork]
+      })
+      .then(this.handleNetworksList.bind(this))
+      .catch(this.handleError.bind(this))
+    } else {
+      this.scanNetworks = false
+    }
     analytics.logEvent('Wifi change page', {
       page
     })
@@ -511,7 +557,7 @@ class Wifi extends React.PureComponent {
           this.setState(newState)
         })
         .catch((err) => {
-          console.log('err :/', err)
+          this.handleError(err)
         })
     }
   }
@@ -519,9 +565,10 @@ class Wifi extends React.PureComponent {
   configureNetwork (network) {
     return () => {
       this.selectedEdit = network
-      this.setState({
-        page: 'configure'
-      })
+      this.browse('configure')
+      // this.setState({
+      //   page: 'configure'
+      // })
     }
   }
 
